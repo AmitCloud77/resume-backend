@@ -85,33 +85,30 @@ class LocalCounterStore:
             return count
 
 
+from google.cloud import firestore
+
 class FirestoreCounterStore:
-    """
-    Drop-in replacement for LocalCounterStore once deployed to GCP.
-    Requires `google-cloud-firestore` (see requirements.txt) and a
-    Firestore database in the same project.
+    def __init__(self, collection="counters", doc_id="resume_visits"):
+        self.client = firestore.Client()
+        self.doc_ref = self.client.collection(collection).document(doc_id)
 
-    from google.cloud import firestore
-
-    class FirestoreCounterStore:
-        def __init__(self, collection="counters", doc_id="resume_visits"):
-            self.doc_ref = firestore.Client().collection(collection).document(doc_id)
-
-        def increment(self) -> int:
-            @firestore.transactional
-            def _bump(transaction):
-                snapshot = self.doc_ref.get(transaction=transaction)
-                current = snapshot.get("count") if snapshot.exists else 0
-                new_count = current + 1
-                transaction.set(self.doc_ref, {"count": new_count})
-                return new_count
-            return _bump(firestore.Client().transaction())
-    """
+    def increment(self) -> int:
+        @firestore.transactional
+        def _bump(transaction):
+            snapshot = self.doc_ref.get(transaction=transaction)
+            current = snapshot.get("count") if snapshot.exists else 0
+            new_count = current + 1
+            transaction.set(self.doc_ref, {"count": new_count})
+            return new_count
+        return _bump(self.client.transaction())
+    
     pass
 
 
 DATA_FILE = Path(__file__).parent / "data" / "visitor_count.json"
-store = LocalCounterStore(DATA_FILE)
+# replace this line near the bottom of the file:
+# store = LocalCounterStore(DATA_FILE)
+store = FirestoreCounterStore()
 
 
 # --------------------------------------------------------------------
