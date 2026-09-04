@@ -1,0 +1,10 @@
+# Local + Cloud Functions runtime
+functions-framework==3.*
+flask==3.*
+
+# Uncomment when you migrate to Firestore in the cloud (Step 8 of the
+# challenge) — see FirestoreCounterStore in main.py
+# google-cloud-firestore==2.*
+
+# Testing
+pytest==8.*

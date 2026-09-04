@@ -1,0 +1,41 @@
+# Cloud Build pipeline for the backend repo.
+# Trigger this on push to `main` (set up in Cloud Build console/gcloud —
+# see DEPLOYMENT_GUIDE.md, Phase 9).
+#
+# Runs the pytest suite first; only deploys the Cloud Function if tests pass.
+
+steps:
+  # 1. Install dependencies
+  - name: "python:3.12-slim"
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install --quiet -r requirements.txt
+
+  # 2. Run tests — pipeline stops here if this step fails
+  - name: "python:3.12-slim"
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install --quiet -r requirements.txt
+        pytest -v
+
+  # 3. Deploy to Cloud Functions (only runs if step 2 passed)
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - functions
+      - deploy
+      - visitor-count
+      - --gen2
+      - --runtime=python312
+      - --region=us-central1
+      - --source=.
+      - --entry-point=visitor_count
+      - --trigger-http
+      - --allow-unauthenticated
+
+options:
+  logging: CLOUD_LOGGING_ONLY
